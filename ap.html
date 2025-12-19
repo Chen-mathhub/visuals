@@ -1,0 +1,213 @@
+import base64
+import os
+import re
+
+# ================= 1. 配置区 =================
+output_filename = "AP_Classic_Tips_Card.html"
+page_title = "等差数列 · 核心考点 & 避坑指南"
+possible_logos = ["中高考手搓数理化.jpg", "中高考手搓数理化.png", "logo.jpg", "logo.png"]
+# ============================================
+
+# --- Logo 处理 ---
+logo_src = ""
+current_dir = os.getcwd()
+for img in possible_logos:
+    img_path = os.path.join(current_dir, img)
+    if os.path.exists(img_path):
+        try:
+            with open(img_path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode('utf-8')
+                ext = os.path.splitext(img)[1].lower()
+                mime = "image/png" if ext == ".png" else "image/jpeg"
+                logo_src = f"data:{mime};base64,{b64}"
+            print(f"✅ 已加载 Logo: {img}")
+            break
+        except Exception as e:
+            print(f"⚠️ Logo 加载失败: {e}")
+
+if not logo_src:
+    logo_src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+# --- HTML 内容 ---
+html_content = r"""
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>__PAGE_TITLE__</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .brand-text { font-family: Impact, sans-serif; letter-spacing: 0.05em; }
+        .handwritten { font-family: 'KaiTi', 'STKaiti', serif; font-weight: bold; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-btn.active { background-color: #2563eb; color: white; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        mjx-container { font-size: 110% !important; }
+    </style>
+</head>
+<body class="pb-12 relative min-h-screen font-sans text-slate-800">
+
+    <header class="fixed top-0 left-0 w-full bg-slate-900/95 backdrop-blur text-white z-50 shadow-sm h-14 flex items-center justify-between px-4 border-b border-white/10">
+        <div class="flex flex-col justify-center">
+            <span class="text-[10px] text-blue-400 tracking-wider leading-tight">CHEN HUB</span>
+            <span class="text-sm font-bold handwritten leading-tight">陈老师手搓数理化</span>
+        </div>
+        <div class="bg-white/10 px-2 py-1 rounded border border-white/20 flex items-center">
+            <i class="fa-solid fa-layer-group text-xs opacity-80"></i>
+            <span class="text-xs font-bold brand-text ml-1.5">MATH-CARD</span>
+        </div>
+    </header>
+
+    <div class="h-16"></div>
+
+    <main class="px-4 space-y-4 relative z-10 max-w-md mx-auto">
+
+        <div class="glass-card rounded-2xl p-5 border-l-4 border-blue-500 shadow-sm flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold text-slate-900 mb-1">等差数列 (AP)</h1>
+                <p class="text-xs font-medium text-slate-500 flex items-center">
+                    <i class="fa-solid fa-list-ol text-orange-500 mr-1.5"></i> 
+                    性质 · 通项 · 求和
+                </p>
+            </div>
+            <img src="__LOGO_PLACEHOLDER__" alt="Logo">
+        </div>
+
+        <div class="glass-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="flex border-b border-slate-200/50 bg-slate-50/80 p-1 gap-1">
+                <button onclick="switchTab('term')" class="tab-btn active flex-1 py-2 rounded-lg text-sm font-bold text-slate-600 transition-all">通项</button>
+                <button onclick="switchTab('sum')" class="tab-btn flex-1 py-2 rounded-lg text-sm font-bold text-slate-600 transition-all">求和</button>
+                <button onclick="switchTab('prop')" class="tab-btn flex-1 py-2 rounded-lg text-sm font-bold text-slate-600 transition-all">性质</button>
+            </div>
+
+            <div id="tab-term" class="tab-content active p-5">
+                <div class="bg-white/80 rounded-xl p-4 border border-blue-100/50 mb-4 shadow-sm text-center">
+                    <div class="text-xs text-slate-400 mb-2 uppercase font-bold tracking-widest">通项公式</div>
+                    <div class="text-slate-900 font-bold text-xl my-2">
+                        $$ a_n = a_1 + (n-1)d $$
+                    </div>
+                    <div class="text-xs text-slate-500 bg-slate-50 py-1 rounded mt-2">推广：\( a_n = a_m + (n-m)d \)</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+                    <div class="text-[10px] text-slate-500 uppercase font-bold">单调性</div>
+                    <div class="flex justify-around mt-2 text-xs font-bold">
+                        <span class="text-green-600">\(d>0\) 增</span>
+                        <span class="text-red-600">\(d<0\) 减</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-sum" class="tab-content p-5">
+                <div class="bg-purple-50/80 rounded-xl p-4 border border-purple-100 shadow-sm text-center relative">
+                    <div class="text-xs text-purple-600 mb-1 uppercase font-bold">求和公式</div>
+                    <div class="text-slate-900 font-bold text-lg">
+                        $$ S_n = \frac{n(a_1 + a_n)}{2} $$
+                    </div>
+                    <div class="text-slate-900 font-bold text-lg mt-2 pt-2 border-t border-purple-200/50">
+                        $$ S_n = na_1 + \frac{n(n-1)}{2}d $$
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-3 border-l-4 border-orange-400 shadow-sm mt-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-chart-line text-orange-500 text-xs"></i>
+                        <span class="text-xs font-bold text-slate-800">函数视角</span>
+                    </div>
+                    <div class="text-xs text-slate-600 leading-relaxed">
+                        \( S_n = An^2 + Bn \) 是过原点二次函数。
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-prop" class="tab-content p-5">
+                <div class="space-y-4">
+                    <div class="bg-white rounded-xl p-3 border-l-4 border-blue-500 shadow-sm">
+                        <div class="text-xs font-bold text-slate-800 mb-1">下标和性质</div>
+                        <div class="text-sm text-slate-700 font-mono bg-blue-50 p-1 rounded text-center">
+                            \( m+n=p+q \Rightarrow a_m+a_n = a_p+a_q \)
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-3 border-l-4 border-green-500 shadow-sm">
+                        <div class="text-xs font-bold text-slate-800 mb-1">片段和性质</div>
+                        <div class="text-xs text-slate-600">
+                            \( S_n, S_{2n}-S_n, S_{3n}-S_{2n} \) 成等差，公差 \( k^2d \)。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border-l-4 border-slate-700 shadow-sm mt-4">
+            <h2 class="text-sm font-bold text-slate-900 mb-3 flex items-center uppercase tracking-wider">
+                <i class="fa-solid fa-graduation-cap text-slate-700 mr-2"></i>
+                陈老师 · 避坑指南
+            </h2>
+            <ul class="text-sm text-slate-600 space-y-3 list-none">
+                <li class="flex items-start bg-red-50 p-2 rounded border border-red-100/50">
+                    <span class="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 rounded mr-2 mt-0.5 shrink-0">易错</span>
+                    <span class="leading-snug text-xs">利用 \( a_n = S_n - S_{n-1} \) 求通项时，务必注意 \( n \ge 2 \) 的条件，并验证 \( n=1 \) 是否成立。</span>
+                </li>
+                <li class="flex items-start bg-blue-50 p-2 rounded border border-blue-100/50">
+                    <span class="bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 rounded mr-2 mt-0.5 shrink-0">技巧</span>
+                    <span class="leading-snug text-xs">涉及3个数成等差，设 \( x-d, x, x+d \) 可简化计算（和为3x）。</span>
+                </li>
+                <li class="flex items-start bg-orange-50 p-2 rounded border border-orange-100/50">
+                    <span class="bg-orange-100 text-orange-600 text-[10px] font-bold px-1.5 rounded mr-2 mt-0.5 shrink-0">难点</span>
+                    <span class="leading-snug text-xs">求 \(S_n\) 最值时，找二次函数对称轴附近的<strong>整数点</strong>，不要直接用顶点坐标。</span>
+                </li>
+            </ul>
+        </div>
+
+    </main>
+
+    <footer class="text-center mt-10 mb-6 text-slate-400 text-[10px] font-medium">
+        <span class="opacity-50">Designed for Mobile Study</span><br>
+        <span class="font-bold brand-text opacity-80">© 2025 CHEN HUB</span>
+    </footer>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            const btnMap = { 'term': 0, 'sum': 1, 'prop': 2 };
+            if(btnMap[tabName] !== undefined) {
+                document.querySelectorAll('.tab-btn')[btnMap[tabName]].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
+"""
+
+# ================= 生成文件 =================
+html_with_title = html_content.replace("__PAGE_TITLE__", page_title)
+
+if logo_src:
+    html_with_logo = re.sub(
+        r'<img src="__LOGO_PLACEHOLDER__" alt="Logo".*?>', 
+        f'<img src="{logo_src}" alt="Logo" style="height: 65px; width: auto; margin-left: 15px; flex-shrink: 0;">', 
+        html_with_title
+    )
+else:
+    html_with_logo = re.sub(r'<img src="__LOGO_PLACEHOLDER__" alt="Logo".*?>', '', html_with_title)
+
+with open(output_filename, "w", encoding="utf-8") as f:
+    f.write(html_with_logo)
+
+print(f"✅ 知识卡片 [等差数列·经典避坑版] 已生成: {os.path.abspath(output_filename)}")
