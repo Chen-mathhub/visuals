@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KET 官方词汇进阶计划 (Phase 1)</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --bg: #f4f7f6;
+            --border: #dcdcdc;
+        }
+
+        body {
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* === 屏幕显示模式 === */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 0.9em; }
+
+        .toolbar {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0 5px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2980b9; }
+        button.reset { background: #95a5a6; }
+
+        .progress-section { margin-bottom: 30px; }
+        .progress-bar { height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #27ae60; width: 0%; transition: width 0.5s; }
+        .progress-text { text-align: center; font-size: 0.85em; margin-top: 5px; color: #666; }
+
+        /* === 单词卡片布局 === */
+        .day-block {
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            margin-bottom: 40px; /* 屏幕上拉大间距 */
+            background: white;
+            overflow: hidden;
+        }
+
+        .day-header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 双栏布局 */
+        }
+
+        .word-cell {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            border-right: 1px solid #eee;
+            position: relative;
+        }
+        
+        /* 去除偶数项右边框 */
+        .word-grid .word-cell:nth-child(2n) { border-right: none; }
+
+        .word-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+        .en { font-weight: 700; font-size: 1.1rem; color: #2c3e50; }
+        .ipa { font-size: 0.85rem; color: #7f8c8d; font-family: "Lucida Sans Unicode", sans-serif; }
+        .cn { font-size: 0.9rem; color: #d35400; font-weight: 600; }
+        
+        .ex {
+            font-size: 0.85rem;
+            color: #555;
+            background: #f9f9f9;
+            padding: 4px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* 高亮关键词 */
+        .hl {
+            color: var(--accent);
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .audio-btn { cursor: pointer; font-size: 14px; opacity: 0.5; }
+        .audio-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        .check-box { float: right; transform: scale(1.3); margin-left: 10px; }
+
+        /* 打印底部栏（默认隐藏） */
+        .print-footer { display: none; }
+
+        /* === 🖨️ 打印专用样式 (A4优化) === */
+        @media print {
+            body { background: white; padding: 0; margin: 0; font-size: 11pt; }
+            .container { box-shadow: none; padding: 0; width: 100%; max-width: 100%; }
+            .toolbar, .progress-section, .subtitle, .audio-btn { display: none !important; }
+            .check-box { display: none; } /* 打印时不显示复选框，显示空方框供手写 */
+            
+            /* 打印时的空方框替代品 */
+            .word-cell::after {
+                content: "□";
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                font-size: 1.2rem;
+                color: #999;
+            }
+
+            .day-block {
+                border: 2px solid #000;
+                margin-bottom: 0;
+                border-radius: 0;
+                /* 强制每个Day之后分页 */
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .day-header {
+                background: #eee !important;
+                color: #000;
+                border-bottom: 2px solid #000;
+            }
+
+            .word-cell { border-color: #000; page-break-inside: avoid; }
+            .ex { background: none; color: #000; font-style: italic; }
+            .hl { color: #000; font-weight: 900; }
+
+            .print-footer {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 15px;
+                padding: 10px 20px;
+                border-top: 1px dashed #000;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>KET 核心词汇进阶表</h1>
+    <div class="subtitle">A2 Key Vocabulary List - Phase 1 (Day 1-14)</div>
+
+    <div class="toolbar no-print">
+        <button onclick="window.print()">🖨️ 打印今日计划 (自动分页)</button>
+        <button class="reset" onclick="resetData()">重置进度</button>
+    </div>
+
+    <div class="progress-section no-print">
+        <div class="progress-bar"><div class="progress-fill" id="bar"></div></div>
+        <div class="progress-text" id="stats">0 / 0 Words Completed</div>
+    </div>
+
+    <div id="app"></div>
+</div>
+
+<script>
+// ==========================================
+// 1. 数据中心 (Data Center)
+// 这里包含了前14天的高频词汇。
+// ==========================================
+const vocabData = [
+    {
+        day: "Day 1", theme: "People & Family (人物家庭)",
+        words: [
+            {en:"aunt", ipa:"/ɑːnt/", cn:"阿姨/姑姑", ex:"My aunt is a teacher."},
+            {en:"cousin", ipa:"/ˈkʌz.ən/", cn:"堂(表)亲", ex:"I play with my cousin."},
+            {en:"grandchild", ipa:"/ˈɡræn.tʃaɪld/", cn:"孙辈", ex:"She loves her grandchild."},
+            {en:"guest", ipa:"/ɡest/", cn:"客人", ex:"We have guests tonight."},
+            {en:"husband", ipa:"/ˈhʌz.bənd/", cn:"丈夫", ex:"Her husband is tall."},
+            {en:"neighbor", ipa:"/ˈneɪ.bər/", cn:"邻居", ex:"Our neighbor is friendly."},
+            {en:"surname", ipa:"/ˈsɜː.neɪm/", cn:"姓氏", ex:"What is your surname?"},
+            {en:"teenager", ipa:"/ˈtiːnˌeɪ.dʒər/", cn:"青少年", ex:"The club is for teenagers."},
+            {en:"wife", ipa:"/waɪf/", cn:"妻子", ex:"He loves his wife."},
+            {en:"colleague", ipa:"/ˈkɒl.iːɡ/", cn:"同事", ex:"I help my colleague."},
+            {en:"adult", ipa:"/ˈæd.ʌlt/", cn:"成年人", ex:"Tickets are for adults."},
+            {en:"member", ipa:"/ˈmem.bər/", cn:"成员", ex:"He is a member of the team."}
+        ]
+    },
+    {
+        day: "Day 2", theme: "School & Education (学校)",
+        words: [
+            {en:"subject", ipa:"/ˈsʌb.dʒekt/", cn:"科目", ex:"Maths is my best subject."},
+            {en:"board", ipa:"/bɔːd/", cn:"黑板", ex:"Look at the board."},
+            {en:"break", ipa:"/breɪk/", cn:"课间休息", ex:"We talk during the break."},
+            {en:"chemistry", ipa:"/ˈkem.ɪ.stri/", cn:"化学", ex:"Chemistry is difficult."},
+            {en:"college", ipa:"/ˈkɒl.ɪdʒ/", cn:"学院", ex:"She goes to college."},
+            {en:"course", ipa:"/kɔːs/", cn:"课程", ex:"I am taking an art course."},
+            {en:"exam", ipa:"/ɪɡˈzæm/", cn:"考试", ex:"Good luck with your exam."},
+            {en:"geography", ipa:"/dʒiˈɒɡ.rə.fi/", cn:"地理", ex:"We use maps in geography."},
+            {en:"history", ipa:"/ˈhɪs.tər.i/", cn:"历史", ex:"We study history today."},
+            {en:"project", ipa:"/ˈprɒdʒ.ekt/", cn:"项目/课题", ex:"This is a group project."},
+            {en:"ruler", ipa:"/ˈruː.lər/", cn:"尺子", ex:"Use a ruler to draw lines."},
+            {en:"uniform", ipa:"/ˈjuː.nɪ.fɔːm/", cn:"校服", ex:"We wear a blue uniform."}
+        ]
+    },
+    {
+        day: "Day 3", theme: "House & Home (家居)",
+        words: [
+            {en:"apartment", ipa:"/əˈpɑːt.mənt/", cn:"公寓", ex:"They live in a new apartment."},
+            {en:"blanket", ipa:"/ˈblæŋ.kɪt/", cn:"毯子", ex:"It is cold, take a blanket."},
+            {en:"carpet", ipa:"/ˈkɑː.pɪt/", cn:"地毯", ex:"Do not spill tea on the carpet."},
+            {en:"ceiling", ipa:"/ˈsiː.lɪŋ/", cn:"天花板", ex:"The ceiling is very high."},
+            {en:"cupboard", ipa:"/ˈkʌb.əd/", cn:"橱柜", ex:"The cups are in the cupboard."},
+            {en:"curtain", ipa:"/ˈkɜː.tən/", cn:"窗帘", ex:"Close the curtains please."},
+            {en:"drawer", ipa:"/drɔːr/", cn:"抽屉", ex:"The pen is in the drawer."},
+            {en:"fridge", ipa:"/frɪdʒ/", cn:"冰箱", ex:"Put the milk in the fridge."},
+            {en:"furniture", ipa:"/ˈfɜː.nɪ.tʃər/", cn:"家具", ex:"We bought new furniture."},
+            {en:"garage", ipa:"/ˈɡær.ɑːʒ/", cn:"车库", ex:"Dad is in the garage."},
+            {en:"lamp", ipa:"/læmp/", cn:"台灯", ex:"Turn on the lamp."},
+            {en:"roof", ipa:"/ruːf/", cn:"屋顶", ex:"The cat is on the roof."}
+        ]
+    },
+    {
+        day: "Day 4", theme: "Food & Drink (饮食)",
+        words: [
+            {en:"biscuit", ipa:"/ˈbɪs.kɪt/", cn:"饼干", ex:"Have a biscuit with tea."},
+            {en:"bowl", ipa:"/bəʊl/", cn:"碗", ex:"I need a bowl for soup."},
+            {en:"butter", ipa:"/ˈbʌt.ər/", cn:"黄油", ex:"Put butter on the bread."},
+            {en:"cereal", ipa:"/ˈsɪə.ri.əl/", cn:"麦片", ex:"I eat cereal for breakfast."},
+            {en:"cheese", ipa:"/tʃiːz/", cn:"奶酪", ex:"Mice love cheese."},
+            {en:"chef", ipa:"/ʃef/", cn:"主厨", ex:"The chef cooks well."},
+            {en:"delicious", ipa:"/dɪˈlɪʃ.əs/", cn:"美味的", ex:"The cake is delicious."},
+            {en:"dessert", ipa:"/dɪˈzɜːt/", cn:"甜点", ex:"Ice cream is my favorite dessert."},
+            {en:"jam", ipa:"/dʒæm/", cn:"果酱", ex:"I like strawberry jam."},
+            {en:"menu", ipa:"/ˈmen.juː/", cn:"菜单", ex:"Can I see the menu?"},
+            {en:"pasta", ipa:"/ˈpæs.tə/", cn:"意面", ex:"We are eating pasta."},
+            {en:"yogurt", ipa:"/ˈjɒɡ.ət/", cn:"酸奶", ex:"Yogurt is healthy."}
+        ]
+    },
+    {
+        day: "Day 5", theme: "Sport & Hobbies (运动爱好)",
+        words: [
+            {en:"badminton", ipa:"/ˈbæd.mɪn.tən/", cn:"羽毛球", ex:"Let's play badminton."},
+            {en:"baseball", ipa:"/ˈbeɪs.bɔːl/", cn:"棒球", ex:"He has a baseball bat."},
+            {en:"camera", ipa:"/ˈkæm.rə/", cn:"相机", ex:"Use the camera to take photos."},
+            {en:"camping", ipa:"/ˈkæm.pɪŋ/", cn:"露营", ex:"We go camping in summer."},
+            {en:"cartoon", ipa:"/kɑːˈtuːn/", cn:"卡通", ex:"Kids watch cartoons."},
+            {en:"cinema", ipa:"/ˈsɪn.ə.mə/", cn:"电影院", ex:"We are going to the cinema."},
+            {en:"collect", ipa:"/kəˈlekt/", cn:"收集", ex:"I collect stamps."},
+            {en:"competition", ipa:"/ˌkɒm.pəˈtɪʃ.ən/", cn:"比赛", ex:"She won the competition."},
+            {en:"cycling", ipa:"/ˈsaɪ.klɪŋ/", cn:"骑行", ex:"Cycling is good exercise."},
+            {en:"magazine", ipa:"/ˌmæɡ.əˈziːn/", cn:"杂志", ex:"I read a fashion magazine."},
+            {en:"racket", ipa:"/ˈræk.ɪt/", cn:"球拍", ex:"I need a tennis racket."},
+            {en:"stadium", ipa:"/ˈsteɪ.di.əm/", cn:"体育场", ex:"The match is at the stadium."}
+        ]
+    },
+    {
+        day: "Day 6", theme: "Travel & Transport (旅行交通)",
+        words: [
+            {en:"abroad", ipa:"/əˈbrɔːd/", cn:"在国外", ex:"They study abroad."},
+            {en:"airport", ipa:"/ˈeə.pɔːt/", cn:"机场", ex:"We must go to the airport."},
+            {en:"ambulance", ipa:"/ˈæm.bjə.ləns/", cn:"救护车", ex:"Call an ambulance!"},
+            {en:"backpack", ipa:"/ˈbæk.pæk/", cn:"背包", ex:"My backpack is heavy."},
+            {en:"delay", ipa:"/dɪˈleɪ/", cn:"延误", ex:"Sorry for the delay."},
+            {en:"flight", ipa:"/flaɪt/", cn:"航班", ex:"The flight is on time."},
+            {en:"guidebook", ipa:"/ˈɡaɪd.bʊk/", cn:"指南", ex:"Read the guidebook."},
+            {en:"helicopter", ipa:"/ˈhel.ɪˌkɒp.tər/", cn:"直升机", ex:"Look at that helicopter."},
+            {en:"luggage", ipa:"/ˈlʌɡ.ɪdʒ/", cn:"行李", ex:"Where is your luggage?"},
+            {en:"passenger", ipa:"/ˈpæs.ən.dʒər/", cn:"乘客", ex:"Passengers must sit down."},
+            {en:"passport", ipa:"/ˈpɑːs.pɔːt/", cn:"护照", ex:"Don't lose your passport."},
+            {en:"suitcase", ipa:"/ˈsuːt.keɪs/", cn:"手提箱", ex:"Pack your suitcase."}
+        ]
+    },
+    {
+        day: "Day 7", theme: "Health & Body (健康身体)",
+        words: [
+            {en:"accident", ipa:"/ˈæk.sɪ.dənt/", cn:"事故", ex:"He had a car accident."},
+            {en:"ache", ipa:"/eɪk/", cn:"疼痛", ex:"I have a stomach ache."},
+            {en:"chemist", ipa:"/ˈkem.ɪst/", cn:"药店", ex:"Go to the chemist for medicine."},
+            {en:"comb", ipa:"/kəʊm/", cn:"梳子", ex:"I need a comb for my hair."},
+            {en:"dentist", ipa:"/ˈden.tɪst/", cn:"牙医", ex:"See a dentist for your tooth."},
+            {en:"fever", ipa:"/ˈfiː.vər/", cn:"发烧", ex:"The baby has a fever."},
+            {en:"finger", ipa:"/ˈfɪŋ.ɡər/", cn:"手指", ex:"She cut her finger."},
+            {en:"heart", ipa:"/hɑːt/", cn:"心脏", ex:"My heart beats fast."},
+            {en:"hospital", ipa:"/ˈhɒs.pɪ.təl/", cn:"医院", ex:"He is in the hospital."},
+            {en:"medicine", ipa:"/ˈmed.ɪ.sən/", cn:"药", ex:"Take this medicine."},
+            {en:"pain", ipa:"/peɪn/", cn:"疼痛", ex:"He feels pain in his leg."},
+            {en:"stomach", ipa:"/ˈstʌm.ək/", cn:"胃", ex:"My stomach is full."}
+        ]
+    },
+    {
+        day: "Day 8", theme: "Clothes & Accessories (衣物)",
+        words: [
+            {en:"belt", ipa:"/belt/", cn:"腰带", ex:"He wears a black belt."},
+            {en:"blouse", ipa:"/blaʊz/", cn:"女衬衫", ex:"That is a nice blouse."},
+            {en:"boot", ipa:"/buːt/", cn:"靴子", ex:"Wear boots in winter."},
+            {en:"bracelet", ipa:"/ˈbreɪ.slət/", cn:"手镯", ex:"She wears a gold bracelet."},
+            {en:"glove", ipa:"/ɡlʌv/", cn:"手套", ex:"Put on your gloves."},
+            {en:"handbag", ipa:"/ˈhænd.bæɡ/", cn:"手提包", ex:"She lost her handbag."},
+            {en:"jacket", ipa:"/ˈdʒæk.ɪt/", cn:"夹克", ex:"It's cold, take a jacket."},
+            {en:"necklace", ipa:"/ˈnek.ləs/", cn:"项链", ex:"She has a pearl necklace."},
+            {en:"pocket", ipa:"/ˈpɒk.ɪt/", cn:"口袋", ex:"Put money in your pocket."},
+            {en:"scarf", ipa:"/skɑːf/", cn:"围巾", ex:"Wear a scarf today."},
+            {en:"shorts", ipa:"/ʃɔːts/", cn:"短裤", ex:"He wears shorts in summer."},
+            {en:"trainer", ipa:"/ˈtreɪ.nər/", cn:"运动鞋", ex:"I bought new trainers."}
+        ]
+    },
+    {
+        day: "Day 9", theme: "Weather & Nature (天气自然)",
+        words: [
+            {en:"autumn", ipa:"/ˈɔː.təm/", cn:"秋天", ex:"Leaves fall in autumn."},
+            {en:"beach", ipa:"/biːtʃ/", cn:"海滩", ex:"We play on the beach."},
+            {en:"cloud", ipa:"/klaʊd/", cn:"云", ex:"Look at that white cloud."},
+            {en:"desert", ipa:"/ˈdez.ət/", cn:"沙漠", ex:"It is hot in the desert."},
+            {en:"field", ipa:"/fiːld/", cn:"田野", ex:"Cows are in the field."},
+            {en:"fog", ipa:"/fɒɡ/", cn:"雾", ex:"There is thick fog today."},
+            {en:"forest", ipa:"/ˈfɒr.ɪst/", cn:"森林", ex:"Animals live in the forest."},
+            {en:"island", ipa:"/ˈaɪ.lənd/", cn:"岛屿", ex:"They live on an island."},
+            {en:"mountain", ipa:"/ˈmaʊn.tɪn/", cn:"山", ex:"Let's climb the mountain."},
+            {en:"storm", ipa:"/stɔːm/", cn:"暴风雨", ex:"A storm is coming."},
+            {en:"weather", ipa:"/ˈweð.ər/", cn:"天气", ex:"The weather is nice."},
+            {en:"wind", ipa:"/wɪnd/", cn:"风", ex:"The wind is blowing."}
+        ]
+    },
+    {
+        day: "Day 10", theme: "Places & Buildings (地点建筑)",
+        words: [
+            {en:"bank", ipa:"/bæŋk/", cn:"银行", ex:"I need money from the bank."},
+            {en:"bridge", ipa:"/brɪdʒ/", cn:"桥", ex:"Cross the river by the bridge."},
+            {en:"castle", ipa:"/ˈkɑː.səl/", cn:"城堡", ex:"The king lives in a castle."},
+            {en:"center", ipa:"/ˈsen.tər/", cn:"中心", ex:"Meet me in the city center."},
+            {en:"church", ipa:"/tʃɜːtʃ/", cn:"教堂", ex:"The church is old."},
+            {en:"factory", ipa:"/ˈfæk.tər.i/", cn:"工厂", ex:"He works in a car factory."},
+            {en:"hotel", ipa:"/həʊˈtel/", cn:"酒店", ex:"We stayed in a hotel."},
+            {en:"library", ipa:"/ˈlaɪ.brər.i/", cn:"图书馆", ex:"Study in the library."},
+            {en:"museum", ipa:"/mjuːˈziː.əm/", cn:"博物馆", ex:"The museum has old art."},
+            {en:"office", ipa:"/ˈɒf.ɪs/", cn:"办公室", ex:"She is in her office."},
+            {en:"square", ipa:"/skweər/", cn:"广场", ex:"Let's meet at the square."},
+            {en:"theatre", ipa:"/ˈθɪə.tər/", cn:"剧院", ex:"We saw a play at the theatre."}
+        ]
+    },
+    {
+        day: "Day 11", theme: "Animals (动物)",
+        words: [
+            {en:"bear", ipa:"/beər/", cn:"熊", ex:"Bears sleep in winter."},
+            {en:"bird", ipa:"/bɜːd/", cn:"鸟", ex:"The bird can fly."},
+            {en:"cow", ipa:"/kaʊ/", cn:"母牛", ex:"The cow gives milk."},
+            {en:"dolphin", ipa:"/ˈdɒl.fɪn/", cn:"海豚", ex:"Dolphins are smart."},
+            {en:"elephant", ipa:"/ˈel.ɪ.fənt/", cn:"大象", ex:"The elephant is huge."},
+            {en:"insect", ipa:"/ˈɪn.sekt/", cn:"昆虫", ex:"Ants are insects."},
+            {en:"monkey", ipa:"/ˈmʌŋ.ki/", cn:"猴子", ex:"The monkey eats a banana."},
+            {en:"pet", ipa:"/pet/", cn:"宠物", ex:"Do you have a pet?"},
+            {en:"rabbit", ipa:"/ˈræb.ɪt/", cn:"兔子", ex:"Rabbits have long ears."},
+            {en:"sheep", ipa:"/ʃiːp/", cn:"绵羊", ex:"The sheep has white wool."},
+            {en:"tiger", ipa:"/ˈtaɪ.ɡər/", cn:"老虎", ex:"Tigers are dangerous."},
+            {en:"wild", ipa:"/waɪld/", cn:"野生的", ex:"Lions are wild animals."}
+        ]
+    },
+    {
+        day: "Day 12", theme: "Time & Numbers (时间数字)",
+        words: [
+            {en:"calendar", ipa:"/ˈkæl.ɪn.dər/", cn:"日历", ex:"Look at the calendar."},
+            {en:"century", ipa:"/ˈsen.tʃər.i/", cn:"世纪", ex:"We live in the 21st century."},
+            {en:"date", ipa:"/deɪt/", cn:"日期", ex:"What is the date today?"},
+            {en:"diary", ipa:"/ˈdaɪə.ri/", cn:"日记", ex:"Write in your diary."},
+            {en:"evening", ipa:"/ˈiːv.nɪŋ/", cn:"傍晚", ex:"We watch TV in the evening."},
+            {en:"hour", ipa:"/aʊər/", cn:"小时", ex:"Wait for one hour."},
+            {en:"midnight", ipa:"/ˈmɪd.naɪt/", cn:"午夜", ex:"I sleep before midnight."},
+            {en:"minute", ipa:"/ˈmɪn.ɪt/", cn:"分钟", ex:"Wait a minute."},
+            {en:"month", ipa:"/mʌnθ/", cn:"月份", ex:"June is a summer month."},
+            {en:"quarter", ipa:"/ˈkwɔː.tər/", cn:"一刻钟", ex:"It is a quarter past three."},
+            {en:"tomorrow", ipa:"/təˈmɒr.əʊ/", cn:"明天", ex:"See you tomorrow."},
+            {en:"yesterday", ipa:"/ˈjes.tə.deɪ/", cn:"昨天", ex:"It rained yesterday."}
+        ]
+    },
+    {
+        day: "Day 13", theme: "Adjectives - Feelings (形容词)",
+        words: [
+            {en:"afraid", ipa:"/əˈfreɪd/", cn:"害怕的", ex:"She is afraid of spiders."},
+            {en:"angry", ipa:"/ˈæŋ.ɡri/", cn:"生气的", ex:"Dad is angry with me."},
+            {en:"bored", ipa:"/bɔːd/", cn:"无聊的", ex:"I am bored, let's play."},
+            {en:"busy", ipa:"/ˈbɪz.i/", cn:"忙碌的", ex:"He is busy working."},
+            {en:"careful", ipa:"/ˈkeə.fəl/", cn:"小心的", ex:"Be careful with the knife."},
+            {en:"clever", ipa:"/ˈklev.ər/", cn:"聪明的", ex:"The boy is very clever."},
+            {en:"crazy", ipa:"/ˈkreɪ.zi/", cn:"疯狂的", ex:"This game is crazy."},
+            {en:"famous", ipa:"/ˈfeɪ.məs/", cn:"著名的", ex:"He is a famous singer."},
+            {en:"friendly", ipa:"/ˈfrend.li/", cn:"友好的", ex:"The dog is friendly."},
+            {en:"happy", ipa:"/ˈhæp.i/", cn:"快乐的", ex:"I feel very happy."},
+            {en:"kind", ipa:"/kaɪnd/", cn:"友善的", ex:"She is a kind person."},
+            {en:"lucky", ipa:"/ˈlʌk.i/", cn:"幸运的", ex:"You are a lucky boy."}
+        ]
+    },
+    {
+        day: "Day 14", theme: "Verbs - Daily (动词)",
+        words: [
+            {en:"believe", ipa:"/bɪˈliːv/", cn:"相信", ex:"I believe you."},
+            {en:"borrow", ipa:"/ˈbɒr.əʊ/", cn:"借入", ex:"Can I borrow your pen?"},
+            {en:"brush", ipa:"/brʌʃ/", cn:"刷", ex:"Brush your teeth daily."},
+            {en:"carry", ipa:"/ˈkær.i/", cn:"搬运", ex:"Can you carry this bag?"},
+            {en:"change", ipa:"/tʃeɪndʒ/", cn:"改变/换衣", ex:"Go change your clothes."},
+            {en:"clean", ipa:"/kliːn/", cn:"打扫", ex:"Clean your room."},
+            {en:"decide", ipa:"/dɪˈsaɪd/", cn:"决定", ex:"Decide what to eat."},
+            {en:"describe", ipa:"/dɪˈskraɪb/", cn:"描述", ex:"Describe the picture."},
+            {en:"earn", ipa:"/ɜːn/", cn:"赚(钱)", ex:"He earns a lot of money."},
+            {en:"grow", ipa:"/ɡrəʊ/", cn:"生长", ex:"Plants grow in the garden."},
+            {en:"hope", ipa:"/həʊp/", cn:"希望", ex:"I hope it is sunny."},
+            {en:"invite", ipa:"/ɪnˈvaɪt/", cn:"邀请", ex:"Invite him to the party."}
+        ]
+    }
+];
+
+// ==========================================
+// 2. 逻辑控制中心 (Logic Center)
+// ==========================================
+
+function init() {
+    renderApp();
+    loadProgress();
+}
+
+function highlight(sentence, word) {
+    // 匹配单词及其常见变形 (s, es, ed, ing, d)
+    const regex = new RegExp(`\\b(${word}|${word}s|${word}es|${word}d|${word}ed|${word}ing)\\b`, 'gi');
+    return sentence.replace(regex, '<span class="hl">$1</span>');
+}
+
+function renderApp() {
+    const app = document.getElementById('app');
+    let html = '';
+
+    vocabData.forEach((dayData, index) => {
+        html += `
+            <div class="day-block">
+                <div class="day-header">
+                    <span>${dayData.day}: ${dayData.theme}</span>
+                    <span style="font-size:0.8em; opacity:0.8; font-weight:normal">共 ${dayData.words.length} 词</span>
+                </div>
+                <div class="word-grid">
+        `;
+
+        dayData.words.forEach(w => {
+            const safeId = `w_${index}_${w.en.replace(/\s/g,'_')}`;
+            const hlEx = highlight(w.ex, w.en);
+            
+            html += `
+                <div class="word-cell">
+                    <input type="checkbox" id="${safeId}" class="check-box" onchange="saveCheck('${safeId}')">
+                    <div class="word-top">
+                        <span class="en">${w.en}</span>
+                        <span class="ipa">${w.ipa}</span>
+                        <span class="audio-btn no-print" onclick="speak('${w.en}')">🔊</span>
+                    </div>
+                    <div class="cn">${w.cn}</div>
+                    <div class="ex">${hlEx}</div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+                <div class="print-footer">
+                    <span>日期: ______________</span>
+                    <span>听写得分: ______ / ${dayData.words.length}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    app.innerHTML = html;
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-GB';
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+}
+
+function saveCheck(id) {
+    const checkbox = document.getElementById(id);
+    if (checkbox.checked) {
+        localStorage.setItem(id, '1');
+    } else {
+        localStorage.removeItem(id);
+    }
+    updateStats();
+}
+
+function loadProgress() {
+    const inputs = document.querySelectorAll('input[type="checkbox"]');
+    inputs.forEach(inp => {
+        if (localStorage.getItem(inp.id) === '1') {
+            inp.checked = true;
+        }
+    });
+    updateStats();
+}
+
+function updateStats() {
+    const all = document.querySelectorAll('input[type="checkbox"]');
+    const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+    const pct = Math.round((checked.length / all.length) * 100);
+    
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('stats').innerText = `${checked.length} / ${all.length} Words Completed (${pct}%)`;
+}
+
+function resetData() {
+    if(confirm('确定重置所有进度吗？')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// 启动程序
+init();
+
+</script>
+</body>
+</html>
