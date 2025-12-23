@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KET Day 1 互动学习 (可开关翻译版)</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #ecf0f1;
+            --text-main: #2c3e50;
+            --accent: #d35400;
+            --success: #27ae60;
+            --danger: #c0392b;
+        }
+
+        body {
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+            background-color: #eef2f7;
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 90vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 顶部 Header */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { margin: 0; font-size: 1.5rem; }
+        .subtitle { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; }
+
+        /* 密码锁栏 */
+        .lock-bar {
+            background: #fff3cd;
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            min-height: 40px;
+        }
+        
+        .lock-bar.unlocked {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .lock-input {
+            padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 100px; text-align: center; font-size: 1rem;
+        }
+
+        .btn-unlock {
+            background: #2c3e50; color: white; border: none; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        
+        .btn-close {
+            background: var(--danger); color: white; border: none; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        .btn-close:hover { background: #a93226; }
+
+        /* 控制显示/隐藏的区域 */
+        #inputArea { display: flex; align-items: center; gap: 10px; }
+        #controlArea { display: none; align-items: center; gap: 15px; }
+
+        /* 内容区域 */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            background: #fdfdfd;
+        }
+
+        /* 单个页面 (默认隐藏) */
+        .page-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        /* 文章文本 */
+        .passage-text {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            color: #34495e;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+        }
+
+        .vocab {
+            color: var(--accent);
+            font-weight: bold;
+            background-color: #fff5e6;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* 翻译块 (默认隐藏) */
+        .translation-block {
+            display: none;
+            background: #f8f9fa;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            margin-top: 20px;
+            color: #57606f;
+            line-height: 1.6;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .app-container.show-translation .translation-block {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 播放控制按钮 */
+        .audio-controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-audio {
+            border: none; padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; font-weight: bold; font-size: 1rem;
+            display: flex; align-items: center; gap: 8px; transition: transform 0.1s;
+        }
+        .btn-play { background: var(--success); color: white; }
+        .btn-play:hover { background: #219150; transform: scale(1.05); }
+        .btn-stop { background: var(--danger); color: white; }
+
+        /* 听力列表样式 */
+        .listen-item {
+            background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px;
+            margin-bottom: 15px; display: flex; flex-direction: column;
+        }
+        .listen-top { display: flex; align-items: center; justify-content: space-between; }
+        .listen-title { font-weight: bold; font-size: 1.1rem; }
+        .btn-circle {
+            width: 40px; height: 40px; border-radius: 50%; border: none;
+            background: var(--primary); color: white; cursor: pointer; font-size: 18px;
+        }
+        .btn-circle.playing { background: var(--danger); }
+        
+        .script-text {
+            margin-top: 10px; padding: 10px; background: #fffaf0;
+            font-size: 0.95rem; border-radius: 6px; display: none;
+        }
+        .app-container.show-translation .script-text { display: block; }
+
+        /* 底部导航栏 */
+        .nav-bar {
+            background: #f1f2f6; padding: 15px 30px; display: flex;
+            justify-content: space-between; align-items: center; border-top: 1px solid #ddd;
+        }
+
+        .btn-nav {
+            background: white; border: 1px solid #ccc; padding: 8px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; color: #555;
+            transition: all 0.2s;
+        }
+        .btn-nav:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; background: #eee; }
+
+        .page-indicator { font-weight: bold; color: #7f8c8d; }
+        .speed-ctrl { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; }
+        select { padding: 5px; border-radius: 4px; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="mainApp">
+    <header>
+        <h1>KET Day 1 听读练习</h1>
+        <div class="subtitle">People & Family (Grade 4)</div>
+    </header>
+
+    <div class="lock-bar" id="lockBar">
+        
+        <div id="inputArea">
+            <span>🔒 翻译锁: </span>
+            <input type="password" id="pwd" class="lock-input" placeholder="">
+            <button class="btn-unlock" onclick="unlock()">解锁</button>
+        </div>
+
+        <div id="controlArea">
+            <span>✅ 中文翻译已开启</span>
+            <button class="btn-close" onclick="lock()">🔒 关闭/隐藏翻译</button>
+        </div>
+
+    </div>
+
+    <div class="content-area">
+
+        <div class="page-section active" id="page1">
+            <div class="section-title">Page 1: The Family Party (Reading)</div>
+            
+            <div class="passage-text" id="text1">Hello, my name is Sam. Today is Saturday. We have a big party at my house. There are many <span class="vocab">guests</span>.
+Look at the woman in the red dress. She is my <span class="vocab">aunt</span>, Lisa. She is my dad's sister. The boy next to her is Mike. He is my <span class="vocab">cousin</span>. Mike is 15 years old. He is a <span class="vocab">teenager</span>. He likes playing basketball.
+We are all happy. Every <span class="vocab">member</span> of the family is here today!</div>
+
+            <div class="translation-block">
+                <strong>[参考译文]：</strong><br>
+                你好，我叫萨姆。今天是星期六。我家有一个盛大的聚会。有很多客人。<br>
+                看那位穿红裙子的女士。她是我的阿姨丽莎。她是我爸爸的姐姐。她旁边的男孩是迈克。他是我的表弟。迈克今年15岁。他是个青少年。他喜欢打篮球。<br>
+                我们都很开心。今天家里的每个成员都在这里！
+            </div>
+
+            <div class="audio-controls">
+                <button class="btn-audio btn-play" onclick="playFullText('text1')">▶ 朗读全文</button>
+                <button class="btn-audio btn-stop" onclick="stopAudio()">■ 停止</button>
+            </div>
+        </div>
+
+        <div class="page-section" id="page2">
+            <div class="section-title">Page 2: My Neighbors (Reading)</div>
+            
+            <div class="passage-text" id="text2">I live in a nice house. I have a very good <span class="vocab">neighbor</span>. His name is Mr. White. So his <span class="vocab">surname</span> is White.
+Mr. White lives with Mrs. White. She is his <span class="vocab">wife</span>, and he is her <span class="vocab">husband</span>. They are very kind. They have no children living with them now. They are both <span class="vocab">adults</span>. They like gardening. I like playing with their dog.</div>
+
+            <div class="translation-block">
+                <strong>[参考译文]：</strong><br>
+                我住在一个漂亮的房子里。我有一个非常好的邻居。他的名字叫怀特先生。所以他的姓氏是怀特。<br>
+                怀特先生和怀特太太住在一起。她是他的妻子，他是她的丈夫。他们非常友善。他们现在没有孩子和他们住在一起。他们都是成年人。他们喜欢园艺。我喜欢和他们的狗一起玩。
+            </div>
+
+            <div class="audio-controls">
+                <button class="btn-audio btn-play" onclick="playFullText('text2')">▶ 朗读全文</button>
+                <button class="btn-audio btn-stop" onclick="stopAudio()">■ 停止</button>
+            </div>
+        </div>
+
+        <div class="page-section" id="page3">
+            <div class="section-title">Page 3: Listening Practice</div>
+
+            <div class="listen-item">
+                <div class="listen-top">
+                    <span class="listen-title">1. Colleague</span>
+                    <button class="btn-circle listen-btn" onclick="playListen(1, this)">▶</button>
+                </div>
+                <div class="script-text">
+                    原文: "This is Mr. Li. He works with my dad. He is my dad's <strong>colleague</strong>."<br>
+                    <span style="color:#7f8c8d; font-size:0.9em;">[译]: 这是李先生。他和爸爸一起工作。他是爸爸的同事。</span>
+                </div>
+            </div>
+
+            <div class="listen-item">
+                <div class="listen-top">
+                    <span class="listen-title">2. Surname</span>
+                    <button class="btn-circle listen-btn" onclick="playListen(2, this)">▶</button>
+                </div>
+                <div class="script-text">
+                    原文: "My name is Tom Brown. My <strong>surname</strong> is Brown."<br>
+                    <span style="color:#7f8c8d; font-size:0.9em;">[译]: 我叫汤姆·布朗。我的姓氏是布朗。</span>
+                </div>
+            </div>
+
+            <div class="listen-item">
+                <div class="listen-top">
+                    <span class="listen-title">3. Grandchild</span>
+                    <button class="btn-circle listen-btn" onclick="playListen(3, this)">▶</button>
+                </div>
+                <div class="script-text">
+                    原文: "My grandma loves me very much. I am her happy <strong>grandchild</strong>."<br>
+                    <span style="color:#7f8c8d; font-size:0.9em;">[译]: 我奶奶非常爱我。我是她快乐的孙子/孙女。</span>
+                </div>
+            </div>
+
+            <div class="listen-item">
+                <div class="listen-top">
+                    <span class="listen-title">4. True or False</span>
+                    <button class="btn-circle listen-btn" onclick="playListen(4, this)">▶</button>
+                </div>
+                <div class="script-text">
+                    原文: "Look at this photo. This is not a child. This is an <strong>adult</strong>. He is working in the office."<br>
+                    <span style="color:#7f8c8d; font-size:0.9em;">[译]: 看这张照片。这不是个孩子。这是一个成年人。他正在办公室工作。</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="nav-bar">
+        <button class="btn-nav" id="btnPrev" onclick="changePage(-1)" disabled>← 上一页</button>
+        
+        <div class="center-controls">
+            <span class="page-indicator" id="pageInd">Page 1 / 3</span>
+            <span class="speed-ctrl">
+                | 语速:
+                <select id="rate">
+                    <option value="0.7">0.7x</option>
+                    <option value="0.9" selected>0.9x</option>
+                    <option value="1.1">1.1x</option>
+                </select>
+            </span>
+        </div>
+
+        <button class="btn-nav" id="btnNext" onclick="changePage(1)">下一页 →</button>
+    </div>
+</div>
+
+<script>
+    // ================= 状态管理 =================
+    let currentPage = 1;
+    const totalPages = 3;
+    const pwd = "777";
+
+    // ================= 翻页逻辑 =================
+    function changePage(step) {
+        stopAudio();
+
+        const nextPage = currentPage + step;
+        if (nextPage < 1 || nextPage > totalPages) return;
+
+        document.getElementById(`page${currentPage}`).classList.remove('active');
+        currentPage = nextPage;
+        document.getElementById(`page${currentPage}`).classList.add('active');
+
+        document.getElementById('pageInd').innerText = `Page ${currentPage} / ${totalPages}`;
+        document.getElementById('btnPrev').disabled = (currentPage === 1);
+        document.getElementById('btnNext').disabled = (currentPage === totalPages);
+    }
+
+    // ================= 密码 & 开关逻辑 =================
+    function unlock() {
+        const input = document.getElementById('pwd');
+        const lockBar = document.getElementById('lockBar');
+        const app = document.getElementById('mainApp');
+        const inputArea = document.getElementById('inputArea');
+        const controlArea = document.getElementById('controlArea');
+
+        if (input.value === pwd) {
+            // 开启翻译
+            app.classList.add('show-translation');
+            lockBar.classList.add('unlocked');
+            
+            // 切换界面：隐藏输入框，显示关闭按钮
+            inputArea.style.display = 'none';
+            controlArea.style.display = 'flex';
+            
+            // 清空密码框（安全起见）
+            input.value = "";
+            
+            alert("✅ 翻译已显示！");
+        } else {
+            alert("❌ 密码错误");
+            input.value = "";
+        }
+    }
+
+    function lock() {
+        const lockBar = document.getElementById('lockBar');
+        const app = document.getElementById('mainApp');
+        const inputArea = document.getElementById('inputArea');
+        const controlArea = document.getElementById('controlArea');
+
+        // 关闭翻译
+        app.classList.remove('show-translation');
+        lockBar.classList.remove('unlocked');
+
+        // 切换界面：隐藏关闭按钮，显示输入框
+        controlArea.style.display = 'none';
+        inputArea.style.display = 'flex';
+        
+        alert("🔒 翻译已隐藏。");
+    }
+
+    // ================= 音频逻辑 =================
+    const listeningScripts = {
+        1: "Question One. Listen and choose. This is Mr. Li. He works with my dad. He is my dad's colleague.",
+        2: "Question Two. Listen and choose. My name is Tom Brown. My surname is Brown.",
+        3: "Question Three. Listen and choose. My grandma loves me very much. I am her happy grandchild.",
+        4: "Question Four. Listen and judge. Look at this photo. This is not a child. This is an adult. He is working in the office."
+    };
+
+    let currentUtterance = null;
+    let currentListenBtn = null;
+
+    function stopAudio() {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        document.querySelectorAll('.listen-btn').forEach(btn => {
+            btn.innerHTML = "▶";
+            btn.classList.remove('playing');
+        });
+        currentListenBtn = null;
+    }
+
+    function speak(text, onStart, onEnd) {
+        stopAudio();
+        if ('speechSynthesis' in window) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-GB';
+            u.rate = parseFloat(document.getElementById('rate').value);
+            u.onstart = onStart;
+            u.onend = onEnd;
+            u.onerror = () => stopAudio();
+            window.speechSynthesis.speak(u);
+        } else {
+            alert("浏览器不支持语音");
+        }
+    }
+
+    function playFullText(elementId) {
+        const el = document.getElementById(elementId);
+        const text = el.innerText || el.textContent;
+        speak(text, null, null);
+    }
+
+    function playListen(id, btn) {
+        if (window.speechSynthesis.speaking && currentListenBtn === btn) {
+            stopAudio();
+            return;
+        }
+        speak(
+            listeningScripts[id],
+            () => { 
+                btn.innerHTML = "■";
+                btn.classList.add('playing');
+                currentListenBtn = btn;
+            },
+            () => { stopAudio(); }
+        );
+    }
+
+    window.onbeforeunload = stopAudio;
+
+</script>
+
+</body>
+</html>
